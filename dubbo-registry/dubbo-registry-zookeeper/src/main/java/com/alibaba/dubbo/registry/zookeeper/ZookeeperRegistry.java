@@ -204,13 +204,15 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 for (String path : toCategoriesPath(url)) {
                     //获得url对应的监听器集合
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
-                    if (listeners == null) {//不存在，进行创建
+                    if (listeners == null) {
+                        //不存在，进行创建
                         zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());
                         listeners = zkListeners.get(url);
                     }
                     //获得ChildListener对象
                     ChildListener zkListener = listeners.get(listener);
-                    if (zkListener == null) {//不存在ChildListener对象，进行创建ChildListener对象
+                    if (zkListener == null) {
+                        //不存在ChildListener对象，进行创建ChildListener对象
                         listeners.putIfAbsent(listener, new ChildListener() {
                             @Override
                             public void childChanged(String parentPath, List<String> currentChilds) {

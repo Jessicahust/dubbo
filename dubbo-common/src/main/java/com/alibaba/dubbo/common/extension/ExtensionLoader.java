@@ -202,6 +202,7 @@ public class ExtensionLoader<T> {
             throw new IllegalArgumentException("Extension type(" + type +
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
+        //从缓存EXTENSION_LOADERS中获取,如果不存在则新建后加入缓存
         // 获得接口对应的拓展点加载器
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
@@ -602,7 +603,8 @@ public class ExtensionLoader<T> {
         // 获得拓展名对应的拓展实现类
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
-            throw findException(name);// 抛出异常
+            // 抛出异常
+            throw findException(name);
         }
         try {
             // 从缓存中，获得拓展对象。
@@ -615,6 +617,7 @@ public class ExtensionLoader<T> {
             // 注入依赖的属性
             injectExtension(instance);
             // 创建 Wrapper 拓展对象
+            // 实现AOP机制
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
@@ -630,6 +633,7 @@ public class ExtensionLoader<T> {
 
     /**
      * 注入依赖的属性
+     * 实现IOC机制
      *
      * @param instance 拓展对象
      * @return 拓展对象
@@ -640,7 +644,8 @@ public class ExtensionLoader<T> {
                 for (Method method : instance.getClass().getMethods()) {
                     if (method.getName().startsWith("set")
                             && method.getParameterTypes().length == 1
-                            && Modifier.isPublic(method.getModifiers())) {// setting && public 方法
+                            && Modifier.isPublic(method.getModifiers())) {
+                        // setting && public 方法
                         // 获得属性的类型
                         Class<?> pt = method.getParameterTypes()[0];
                         try {
@@ -802,6 +807,7 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + "is not subtype of interface.");
         }
+        // 判断类实现（如：DubboProtocol）上有米有打上@Adaptive注解，如果打上了注解，将此类作为Protocol协议的设配类缓存起来
         // 缓存自适应拓展对象的类到 `cachedAdaptiveClass`
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             if (cachedAdaptiveClass == null) {
@@ -812,6 +818,7 @@ public class ExtensionLoader<T> {
                         + ", " + clazz.getClass().getName());
             }
             // 缓存拓展 Wrapper 实现类到 `cachedWrapperClasses`
+            //如果类实现没有打上@Adaptive， 判断实现类是否存在入参为接口的构造器
         } else if (isWrapperClass(clazz)) {
             Set<Class<?>> wrappers = cachedWrapperClasses;
             if (wrappers == null) {
@@ -879,6 +886,7 @@ public class ExtensionLoader<T> {
     /**
      * 创建自适应拓展对象
      *
+     *
      * @return 拓展对象
      */
     @SuppressWarnings("unchecked")
@@ -911,7 +919,9 @@ public class ExtensionLoader<T> {
         String code = createAdaptiveExtensionClassCode();
         //编译代码,并返回该类
         ClassLoader classLoader = findClassLoader();
+        //寻找Compiler的适配器扩展类
         com.alibaba.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
+        //进行编译成Class的实例返回
         return compiler.compile(code, classLoader);
     }
 
@@ -1030,7 +1040,7 @@ public class ExtensionLoader<T> {
                         break;
                     }
                 }
-
+                //默认值，@SPI("cachedDefaultName")
                 String defaultExtName = cachedDefaultName;
                 String getNameCode = null;
                 for (int i = value.length - 1; i >= 0; --i) {

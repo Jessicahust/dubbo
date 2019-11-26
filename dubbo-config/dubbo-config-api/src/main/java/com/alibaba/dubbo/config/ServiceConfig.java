@@ -98,7 +98,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 非配置。
      */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
-    // interface type
+    /**
+     * interface type
+     */
     private String interfaceName;
     /**
      * {@link #interfaceName} 对应的接口类
@@ -106,11 +108,17 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 非配置
      */
     private Class<?> interfaceClass;
-    // reference to interface impl
+    /**
+     * reference to interface impl
+     */
     private T ref;
-    // service name
+    /**
+     * service name
+     */
     private String path;
-    // method configuration
+    /**
+     * method configuration
+     */
     private List<MethodConfig> methods;
     private ProviderConfig provider;
     private transient volatile boolean exported;
@@ -258,6 +266,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
         //拼接属性配置（环境变量 + properties属性）到ProviderConfig对象
+        // 检测 provider 是否为空，为空则新建一个，并通过系统变量为其初始化
         checkDefault();
         //从ProviderConfig对象中，读取application,module,registries,monitor,protocols配置对象
         if (provider != null) {
@@ -306,8 +315,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             if (StringUtils.isEmpty(generic)) {
                 generic = Boolean.TRUE.toString();
             }
-            //普通接口的实现
         } else {
+            //普通接口的实现
             try {
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
                         .getContextClassLoader());
@@ -459,17 +468,20 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 if (arguments != null && !arguments.isEmpty()) {
                     for (ArgumentConfig argument : arguments) {
                         // convert argument type
-                        if (argument.getType() != null && argument.getType().length() > 0) { // 指定了类型
+                        if (argument.getType() != null && argument.getType().length() > 0) {
+                            // 指定了类型
                             Method[] methods = interfaceClass.getMethods();
                             // visit all methods
                             if (methods != null && methods.length > 0) {
                                 for (int i = 0; i < methods.length; i++) {
                                     String methodName = methods[i].getName();
                                     // target the method, and get its signature
-                                    if (methodName.equals(method.getName())) {  // 找到指定方法
+                                    if (methodName.equals(method.getName())) {
+                                        // 找到指定方法
                                         Class<?>[] argtypes = methods[i].getParameterTypes();
                                         // one callback in the method
-                                        if (argument.getIndex() != -1) { // 指定单个参数的位置 + 类型
+                                        if (argument.getIndex() != -1) {
+                                            // 指定单个参数的位置 + 类型
                                             if (argtypes[argument.getIndex()].getName().equals(argument.getType())) {
                                                 // 将 ArgumentConfig 对象，添加到 `map` 集合中。
                                                 appendParameters(map, argument, method.getName() + "." + argument.getIndex());
@@ -483,7 +495,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                                                 if (argclazz.getName().equals(argument.getType())) {
                                                     // 将 ArgumentConfig 对象，添加到 `map` 集合中。
                                                     appendParameters(map, argument, method.getName() + "." + j);
-                                                    if (argument.getIndex() != -1 && argument.getIndex() != j) {// 多余的判断，因为 `argument.getIndex() == -1` 。
+                                                    if (argument.getIndex() != -1 && argument.getIndex() != j) {
+                                                        // 多余的判断，因为 `argument.getIndex() == -1` 。
                                                         throw new IllegalArgumentException("argument config error : the index attribute and type attribute not match :index :" + argument.getIndex() + ", type:" + argument.getType());
                                                     }
                                                 }
@@ -492,7 +505,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                                     }
                                 }
                             }
-                        } else if (argument.getIndex() != -1) {// 指定单个参数的位置
+                        } else if (argument.getIndex() != -1) {
+                            // 指定单个参数的位置
                             // 将 ArgumentConfig 对象，添加到 `map` 集合中。
                             appendParameters(map, argument, method.getName() + "." + argument.getIndex());
                         } else {
@@ -510,10 +524,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         } else {
             String revision = Version.getVersion(interfaceClass, version);
             if (revision != null && revision.length() > 0) {
-                map.put("revision", revision); // 修订号
+                // 修订号
+                map.put("revision", revision);
             }
-
-            String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames(); // 获得方法数组
+            // 获得方法数组
+            String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
                 logger.warn("NO method found in service interface " + interfaceClass.getName());
                 map.put(Constants.METHODS_KEY, Constants.ANY_VALUE);
@@ -582,7 +597,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         //创建DelegateProviderMetaDataInvoker对象
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
-                        //使用Protocol暴露Invoker对象
+                        //使用Protocol暴露Invoker对象RegistryProtocol
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         //添加到'exporters'
                         exporters.add(exporter);
@@ -619,6 +634,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             ServiceClassHolder.getInstance().pushServiceClass(getServiceClass(ref));
             //使用ProxyFactory创建Invoker对象
             //使用Protocol暴露Invoker对象
+            //extName 是 “injvm”，所以protocol是InjvmProtocol
             Exporter<?> exporter = protocol.export(
                     proxyFactory.getInvoker(ref, (Class) interfaceClass, local));
             //添加到'exporters'

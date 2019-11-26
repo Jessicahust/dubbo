@@ -354,12 +354,18 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     /**
      * 重试
+     * Retry the failed actions
+     * 注册失败，重新注册，failedRegistered
+     * 注销失败，重新注销，failedUnregistered
+     * 订阅失败，重新订阅，failedSubscribed
+     * 退订失败，重新退订，failedUnsubscribed
+     * 通知监听器失败，重新通知，failedNotified
      */
-    // Retry the failed actions
     protected void retry() {
         //重试执行注册
         if (!failedRegistered.isEmpty()) {
-            Set<URL> failed = new HashSet<URL>(failedRegistered);//避免并发冲突
+            //避免并发冲突
+            Set<URL> failed = new HashSet<URL>(failedRegistered);
             if (failed.size() > 0) {
                 if (logger.isInfoEnabled()) {
                     logger.info("Retry register " + failed);

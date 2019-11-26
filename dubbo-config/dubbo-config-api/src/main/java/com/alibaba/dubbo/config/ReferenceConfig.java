@@ -443,12 +443,12 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
-            //单‘urls’时，引用服务，返回Invoker对象
+            //单‘urls’时，引用服务，返回Invoker对象,单个注册中心或服务提供者(服务直连，下同)
             if (urls.size() == 1) {
-                //引用服务
+                //引用服务,调用 RegistryProtocol 的 refer 构建 Invoker 实例
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {
-                //循环'urls',引用服务，返回Invoker对象
+                //循环'urls',引用服务，返回Invoker对象,多个注册中心或多个服务提供者，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
